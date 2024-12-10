@@ -9,42 +9,6 @@ litemall = Spring Boot后端 + Vue管理员前端 + 微信小程序用户前端 
 * [FAQ](https://linlinjava.gitbook.io/litemall/faq)
 * [API](https://linlinjava.gitbook.io/litemall/api)
 
-## 项目实例
-
-### 小商场实例
-
-* renard-wx模块实例
-
-![](./doc/pics/readme/renard_wx_demo.png)
-
-> 注意：此实例是真实小商场，开发者可以购买商品和付款，但请不要尝试退款操作。
-
-* litemall-wx模块实例
-
-![](./doc/pics/readme/litemall_wx_demo.png)
-
-> 注意：此实例是测试小商场，开发者请不要尝试购买商品、付款、退款操作。
-
-### 轻商场实例
-
-请手机扫描以下二维码访问:
-
-![](./doc/pics/readme/mobmall.png)
-
-或者浏览器采用手机模式访问以下网址: [http://122.51.199.160:8080/vue/index.html#/](http://122.51.199.160:8080/vue/index.html#/)
-
-注意：
-> 1. 由于第一次加载数据量较大，建议wifi网络访问，且耐心等待数秒。
-> 2. 此实例是测试轻商场，不支持支付，而且处于开发中还不完善。
-
-### 管理后台实例
-
-![](./doc/pics/readme/admin-dashboard.png)
-
-1. 浏览器打开，输入以下网址: [http://122.51.199.160:8080/#/login](http://122.51.199.160:8080/#/login)
-2. 管理员用户名`admin123`，管理员密码`admin123`
-> 注意：此实例只是测试管理后台，不是前两个小商城的管理后台。
-
 ## 项目代码
 
 * [码云](https://gitee.com/linlinjava/litemall)
@@ -118,10 +82,9 @@ litemall = Spring Boot后端 + Vue管理员前端 + 微信小程序用户前端 
 
     打开命令行，输入以下命令
     ```bash
-    npm install -g cnpm --registry=https://registry.npm.taobao.org
     cd litemall/litemall-admin
-    cnpm install
-    cnpm run dev
+    npm install --registry=https://registry.npm.taobao.org
+    npm run dev
     ```
     此时，浏览器打开，输入网址`http://localhost:9527`, 此时进入管理后台登录页面。
     
@@ -142,10 +105,9 @@ litemall = Spring Boot后端 + Vue管理员前端 + 微信小程序用户前端 
 
     打开命令行，输入以下命令
     ```bash
-    npm install -g cnpm --registry=https://registry.npm.taobao.org
     cd litemall/litemall-vue
-    cnpm install
-    cnpm run dev
+    npm install --registry=https://registry.npm.taobao.org
+    npm run dev
     ```
     此时，浏览器（建议采用chrome 手机模式）打开，输入网址`http://localhost:6255`, 此时进入轻商场。
 
@@ -154,7 +116,7 @@ litemall = Spring Boot后端 + Vue管理员前端 + 微信小程序用户前端 
         
 ## 开发计划
 
-当前版本[v1.7.0](https://linlinjava.gitbook.io/litemall/changelog)
+当前版本[v1.8.0](https://linlinjava.gitbook.io/litemall/changelog)
 
 目前项目开发中，存在诸多不足，以下是目前规划的开发计划。
 
@@ -233,7 +195,7 @@ V 3.0.0 完成以下目标：
 
 ## 问题
 
-![](doc/pics/readme/qq3.png)
+![](doc/pics/readme/qq4.png)
 
  * 开发者有问题或者好的建议可以用Issues反馈交流，请给出详细信息
  * 在开发交流群中应讨论开发、业务和合作问题

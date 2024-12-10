@@ -470,11 +470,60 @@ public class WxOrderService {
             }
         }
 
-        // 订单支付超期任务
-        taskService.addTask(new OrderUnpaidTask(orderId));
+        // NOTE: 建议开发者从业务场景核实下面代码，防止用户利用业务BUG使订单跳过支付环节。
+        // 如果订单实际支付费用是0，则直接跳过支付变成待发货状态
+        boolean payed = false;
+        if (order.getActualPrice().equals(new BigDecimal("0.00"))) {
+            payed = true;
+
+            LitemallOrder o = new LitemallOrder();
+            o.setId(orderId);
+            o.setOrderStatus(OrderUtil.STATUS_PAY);
+            orderService.updateSelective(o);
+
+            //  支付成功，有团购信息，更新团购信息
+            LitemallGroupon groupon = grouponService.queryByOrderId(order.getId());
+            if (groupon != null) {
+                grouponRules = grouponRulesService.findById(groupon.getRulesId());
+
+                //仅当发起者才创建分享图片
+                if (groupon.getGrouponId() == 0) {
+                    String url = qCodeService.createGrouponShareImage(grouponRules.getGoodsName(), grouponRules.getPicUrl(), groupon);
+                    groupon.setShareUrl(url);
+                }
+                groupon.setStatus(GrouponConstant.STATUS_ON);
+                if (grouponService.updateById(groupon) == 0) {
+                    throw new RuntimeException("更新数据已失效");
+                }
+
+
+                List<LitemallGroupon> grouponList = grouponService.queryJoinRecord(groupon.getGrouponId());
+                if (groupon.getGrouponId() != 0 && (grouponList.size() >= grouponRules.getDiscountMember() - 1)) {
+                    for (LitemallGroupon grouponActivity : grouponList) {
+                        grouponActivity.setStatus(GrouponConstant.STATUS_SUCCEED);
+                        grouponService.updateById(grouponActivity);
+                    }
+
+                    LitemallGroupon grouponSource = grouponService.queryById(groupon.getGrouponId());
+                    grouponSource.setStatus(GrouponConstant.STATUS_SUCCEED);
+                    grouponService.updateById(grouponSource);
+                }
+            }
+
+            //TODO 发送邮件和短信通知，这里采用异步发送
+            // 订单支付成功以后，会发送短信给用户，以及发送邮件给管理员
+            notifyService.notifyMail("新订单通知", order.toString());
+            // 这里微信的短信平台对参数长度有限制，所以将订单号只截取后6位
+            notifyService.notifySmsTemplateSync(order.getMobile(), NotifyType.PAY_SUCCEED, new String[]{order.getOrderSn().substring(8, 14)});
+        }
+        else {
+            // 订单支付超期任务
+            taskService.addTask(new OrderUnpaidTask(orderId));
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("orderId", orderId);
+        data.put("payed", payed);
         if (grouponRulesId != null && grouponRulesId > 0) {
             data.put("grouponLinkId", grouponLinkId);
         }
@@ -767,16 +816,6 @@ public class WxOrderService {
         // 这里微信的短信平台对参数长度有限制，所以将订单号只截取后6位
         notifyService.notifySmsTemplateSync(order.getMobile(), NotifyType.PAY_SUCCEED, new String[]{orderSn.substring(8, 14)});
 
-        // 请依据自己的模版消息配置更改参数
-        String[] parms = new String[]{
-                order.getOrderSn(),
-                order.getOrderPrice().toString(),
-                DateTimeUtil.getDateTimeDisplayString(order.getAddTime()),
-                order.getConsignee(),
-                order.getMobile(),
-                order.getAddress()
-        };
-
         // 取消订单超时未支付任务
         taskService.removeTask(new OrderUnpaidTask(order.getId()));
 
@@ -916,29 +955,22 @@ public class WxOrderService {
      * 待评价订单商品信息
      *
      * @param userId  用户ID
-     * @param orderId 订单ID
-     * @param goodsId 商品ID
+     * @param ogid 订单商品ID
      * @return 待评价订单商品信息
      */
-    public Object goods(Integer userId, Integer orderId, Integer goodsId) {
+    public Object goods(Integer userId, Integer ogid) {
         if (userId == null) {
             return ResponseUtil.unlogin();
         }
-        LitemallOrder order = orderService.findById(userId, orderId);
-        if (order == null) {
-            return ResponseUtil.badArgument();
+        LitemallOrderGoods orderGoods = orderGoodsService.findById(ogid);
+
+        if (orderGoods != null) {
+            Integer orderId = orderGoods.getOrderId();
+            LitemallOrder order = orderService.findById(orderId);
+            if (!order.getUserId().equals(userId)) {
+                return ResponseUtil.badArgument();
+            }
         }
-
-        List<LitemallOrderGoods> orderGoodsList = orderGoodsService.findByOidAndGid(orderId, goodsId);
-        int size = orderGoodsList.size();
-
-        Assert.state(size < 2, "存在多个符合条件的订单商品");
-
-        if (size == 0) {
-            return ResponseUtil.badArgumentValue();
-        }
-
-        LitemallOrderGoods orderGoods = orderGoodsList.get(0);
         return ResponseUtil.ok(orderGoods);
     }
 
@@ -969,7 +1001,6 @@ public class WxOrderService {
         if (order == null) {
             return ResponseUtil.badArgumentValue();
         }
-        Short orderStatus = order.getOrderStatus();
         if (!OrderUtil.isConfirmStatus(order) && !OrderUtil.isAutoConfirmStatus(order)) {
             return ResponseUtil.fail(ORDER_INVALID_OPERATION, "当前商品不能评价");
         }

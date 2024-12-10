@@ -14,6 +14,14 @@ public class AdminWebSessionManager extends DefaultWebSessionManager {
     public static final String LOGIN_TOKEN_KEY = "X-Litemall-Admin-Token";
     private static final String REFERENCED_SESSION_ID_SOURCE = "Stateless request";
 
+
+    public AdminWebSessionManager() {
+        super();
+        setGlobalSessionTimeout(MILLIS_PER_HOUR * 6);
+//        setSessionIdCookieEnabled(false);
+        setSessionIdUrlRewritingEnabled(false);
+    }
+
     @Override
     protected Serializable getSessionId(ServletRequest request, ServletResponse response) {
         String id = WebUtils.toHttp(request).getHeader(LOGIN_TOKEN_KEY);
@@ -21,6 +29,8 @@ public class AdminWebSessionManager extends DefaultWebSessionManager {
             request.setAttribute(ShiroHttpServletRequest.REFERENCED_SESSION_ID_SOURCE, REFERENCED_SESSION_ID_SOURCE);
             request.setAttribute(ShiroHttpServletRequest.REFERENCED_SESSION_ID, id);
             request.setAttribute(ShiroHttpServletRequest.REFERENCED_SESSION_ID_IS_VALID, Boolean.TRUE);
+            // 参考 https://blog.csdn.net/narutots/article/details/120363843
+            request.setAttribute(ShiroHttpServletRequest.SESSION_ID_URL_REWRITING_ENABLED, this.isSessionIdUrlRewritingEnabled());
             return id;
         } else {
             return super.getSessionId(request, response);

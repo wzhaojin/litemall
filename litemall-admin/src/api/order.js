@@ -6,8 +6,8 @@ export function listOrder(query) {
     url: '/order/list',
     method: 'get',
     params: query,
-    paramsSerializer: function(params) {
-      return Qs.stringify(params, { arrayFormat: 'repeat' })
+    paramsSerializer: {
+      serialize: (params) => Qs.stringify(params, { arrayFormat: 'repeat' })
     }
   })
 }
@@ -31,6 +31,14 @@ export function shipOrder(data) {
 export function refundOrder(data) {
   return request({
     url: '/order/refund',
+    method: 'post',
+    data
+  })
+}
+
+export function payOrder(data) {
+  return request({
+    url: '/order/pay',
     method: 'post',
     data
   })
